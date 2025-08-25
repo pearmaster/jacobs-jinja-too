@@ -1,27 +1,48 @@
 version: 2.1
+
+executors:
+  # Define a Python executor using a pre-built CircleCI image.
+  # This image comes with Python pre-installed.
+  python-executor:
+    docker:
+      - image: cimg/python:3.10
+
 jobs:
   test_pypi_publish:
-    docker:
-      - image: circleci/python:3
+    executor: python-executor
     steps:
       - checkout  # checkout source code to working directory
       - run:
-          command: |  # create whl, install twine and publish to Test PyPI
-            python setup.py sdist bdist_wheel
-            sudo pip install pipenv
-            pipenv install twine
-            pipenv run twine upload --repository testpypi dist/*
+          name: Install dependencies
+          command: |  
+            uv sync
+      - run:
+          name: Package
+          command: |
+            uv build
+      - run:
+          name: Publish to Test PyPI
+          command: |
+            uv publish -- --index testpypi dist/*
+
+
   pypi_publish:
-    docker:
-      - image: circleci/python:3
+    executor: python-executor
     steps:
       - checkout  # checkout source code to working directory
       - run:
-          command: |  # create whl, install twine and publish to PyPI
-            python setup.py sdist bdist_wheel
-            sudo pip install pipenv
-            pipenv install twine
-            pipenv run twine upload dist/*
+          name: Install dependencies
+          command: |  
+            uv sync
+      - run:
+          name: Package
+          command: |
+            uv build
+      - run:
+          name: Publish to PyPI
+          command: |
+            uv publish
+
 workflows:
   build_test_publish:
     jobs:

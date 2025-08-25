@@ -1,2 +1,5 @@
-__version_info__ = (0, 0, 8)
-__version__ = ".".join([str(x) for x in list(__version_info__)])
+from importlib.metadata import version
+
+__version__ = version('jacobs-jinja-too')
+__version_info__ = tuple(__version__.split('.')[:3])
+

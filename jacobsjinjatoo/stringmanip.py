@@ -14,3 +14,6 @@ def italics(s: str):
 
 def upper_camel_case(s: str):
     return stringcase.pascalcase(stringcase.snakecase(s)).replace('_', '')
+
+def lower_camel_case(s: str):
+    return stringcase.camelcase(stringcase.snakecase(s)).replace('_', '')

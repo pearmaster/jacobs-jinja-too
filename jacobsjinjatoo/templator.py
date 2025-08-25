@@ -68,7 +68,8 @@ class Templator(object):
             env.filters['PascalCase'] = stringmanip.upper_camel_case
             env.filters['CONST_CASE'] = lambda s : stringcase.constcase(str(s)).replace('__', '_')
             env.filters['snake_case'] = stringcase.snakecase
-            env.filters['camelCase'] = stringcase.camelcase
+            env.filters['camelCase'] = stringmanip.lower_camel_case
+            env.filters['lowerCamelCase'] = stringmanip.lower_camel_case
             env.filters['type'] = type # For debug
             env.filters['underscore'] = self._add_leading_underscore
             env.filters['quotestring'] = self._quote_if_string
