@@ -1,16 +1,16 @@
 import io
 import os.path
-
+from pathlib import Path
 class WriteIfChangedFile(io.StringIO):
 
-    def __init__(self, filename):
+    def __init__(self, filename:str|Path):
         super().__init__()
-        self.filename = filename
-        self.initialData = None      
-        try:  
-            with open(filename, 'r') as fp:
-                buf = fp.read()
-                self.initialData = buf
+        if isinstance(filename, str):
+            filename = Path(filename)
+        self.filename: Path = filename
+        self.initialData: str = ''
+        try:
+            self.initialData = self.filename.read_text()
         except FileNotFoundError:
             self.initialData = ''
 
@@ -20,9 +20,7 @@ class WriteIfChangedFile(io.StringIO):
         currentData = self.read()
         self.seek(pos)
         if self.initialData != currentData:
-            with open(self.filename, 'w') as fp:
-                fp.seek(0)
-                fp.write(currentData)
+            self.filename.write_text(currentData)
     
     def __enter__(self):
         return self

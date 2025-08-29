@@ -5,26 +5,44 @@ import re
 from typing import Union, List, Dict, Callable
 from . import stringmanip
 from .filewriter import WriteIfChangedFile
+from pathlib import Path
+import logging
+
+class OutputNameException(Exception):
+    """ This should be raised whenever there is trouble determining the output filename."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
 
 class Templator(object):
     USE_FULL_PATHS=1
 
-    def __init__(self, output_dir:Union[str, int]=USE_FULL_PATHS):
-        self.output_dir = output_dir
+    def __init__(self, output_dir:str|int|Path=USE_FULL_PATHS):
+        self.logger: logging.Logger = logging.getLogger(__name__)
+        if isinstance(output_dir, str):
+            output_dir = Path(output_dir)
+        self.output_dir: Path|int = output_dir
         self.generated_files: List[str] = []
         self._jinja2_environment = None
         self.loaders: List[jinja2.loaders.BaseLoader] = []
         self.filters: Dict[str, Callable[[str], str]] = dict()
 
-    def set_output_dir(self, output_dir:Union[str,int]):
+    def set_output_dir(self, output_dir:str|int|Path):
+        if isinstance(output_dir, str):
+            output_dir = Path(output_dir)
         self.output_dir = output_dir
         return self
 
-    def add_template_dir(self, template_dir):
+    def add_template_dir(self, template_dir: str|Path):
+        if isinstance(template_dir, str):
+            template_dir = Path(template_dir)
+        self.logger.debug("Using templates from directory %s", template_dir)
         loader = jinja2.FileSystemLoader(searchpath=template_dir)
         return self.add_jinja2_loader(loader)
     
-    def add_template_package(self, package_name):
+    def add_template_package(self, package_name: str):
+        self.logger.debug("Using templates from package %s", package_name)
         loader = jinja2.PackageLoader(package_name, '')
         return self.add_jinja2_loader(loader)
 
@@ -82,24 +100,30 @@ class Templator(object):
 
         return self._jinja2_environment
 
-    def render_template(self, template_name, output_name = None, **kwargs):
-        if isinstance(self.output_dir, str):
-            output_filename = output_name or ".".join(template_name.split(".")[:-1])
-            output_file = os.path.join(self.output_dir, output_filename)
-        else:
-            output_filename = os.path.basename(output_name)
-            output_file = output_name
+    def _output_filepath(self, template_name: str, output_name: str|Path|None) -> Path:
+        if output_name is None:
+            if self.output_dir == self.USE_FULL_PATHS:
+                raise OutputNameException("When using full paths for output, an output_name must be provided.")
+            output_name = ".".join(template_name.split(".")[:-1])
+        if self.output_dir != self.USE_FULL_PATHS:
+            assert isinstance(self.output_dir, (str, Path)), "Internal error where output dir is the wrong type (not a path)"
+            output_name = self.output_dir / output_name
+        return Path(output_name)
+
+    def render_template(self, template_name: str, output_name: str|Path|None = None, **kwargs) -> str:
+        output_filepath = self._output_filepath(template_name, output_name)
+        self.logger.info("Rendering template %s to %s", template_name, output_filepath)
         template = self._get_jinja2_environment().get_template(template_name)
         rendered = template.render(kwargs)
-        with WriteIfChangedFile(output_file) as fp:
+        with WriteIfChangedFile(output_filepath) as fp:
             fp.write(rendered)
-        self.generated_files.append(output_filename)
-        return output_filename
+        self.generated_files.append(output_filepath)
+        return output_filepath
 
 
 class MarkdownTemplator(Templator):
 
-    def __init__(self, output_dir:Union[str,int]=Templator.USE_FULL_PATHS):
+    def __init__(self, output_dir:str|int|Path=Templator.USE_FULL_PATHS):
         super().__init__(output_dir)
         self.add_filter('bold', stringmanip.bold)
         self.add_filter('italics', stringmanip.italics)
@@ -130,7 +154,7 @@ class CodeTemplator(MarkdownTemplator):
     """Since most code can use markdown in documentation blocks, we inherit from MarkdownTemplator.
     """
 
-    def __init__(self, output_dir:Union[str,int]=Templator.USE_FULL_PATHS):
+    def __init__(self, output_dir:str|int|Path=Templator.USE_FULL_PATHS):
         super().__init__(output_dir)
         self.add_filter('enumify', self._enumify)
         self.add_filter('privatize', self._privatize)
