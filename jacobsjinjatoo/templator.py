@@ -36,8 +36,8 @@ class Templator(object):
         return self
 
     def add_template_dir(self, template_dir: str|Path):
-        if isinstance(template_dir, str):
-            template_dir = Path(template_dir)
+        if isinstance(template_dir, Path):
+            template_dir = str(template_dir)
         self.logger.debug("Using templates from directory %s", template_dir)
         loader = jinja2.FileSystemLoader(searchpath=template_dir)
         return self.add_jinja2_loader(loader)
@@ -114,7 +114,7 @@ class Templator(object):
     def render_template(self, template_name: str, output_name: str|Path|None = None, **kwargs) -> str:
         output_filepath = self._output_filepath(template_name, output_name)
         self.logger.info("Rendering template %s to %s", template_name, output_filepath)
-        template = self._get_jinja2_environment().get_template(template_name)
+        template = self._get_jinja2_environment().get_template(str(template_name))
         rendered = template.render(kwargs)
         with WriteIfChangedFile(output_filepath) as fp:
             fp.write(rendered)
