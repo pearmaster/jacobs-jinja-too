@@ -2,11 +2,12 @@ import os
 import jinja2
 import stringcase
 import re
-from typing import Union, List, Dict, Callable
+from typing import List, Dict, Callable
 from . import stringmanip
 from .filewriter import WriteIfChangedFile
 from pathlib import Path
 import logging
+from jinja_markdown import MarkdownExtension
 
 class OutputNameException(Exception):
     """ This should be raised whenever there is trouble determining the output filename."""
@@ -119,6 +120,19 @@ class Templator(object):
             fp.write(rendered)
         self.generated_files.append(output_filepath)
         return output_filepath
+
+
+class WebTemplator(Templator):
+    """A Templator with filters useful for generating web content.
+    """
+
+    def __init__(self, output_dir:str|int|Path=Templator.USE_FULL_PATHS):
+        super().__init__(output_dir)
+
+    def _get_jinja2_environment(self, force=False):
+        env = super()._get_jinja2_environment(force)
+        env.add_extension(MarkdownExtension)
+        return env
 
 
 class MarkdownTemplator(Templator):
