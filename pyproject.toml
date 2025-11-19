@@ -1,6 +1,6 @@
 [project]
 name = "jacobs-jinja-too"
-version = "0.2.4"
+version = "0.2.6"
 authors = [
   { name="Jacob Brunson", email="pypi@jacobbrunson.com" },
 ]
@@ -11,7 +11,6 @@ license = "LGPL-2.0"
 dependencies = [
     "jinja-markdown>=1.210911",
     "jinja2>=3.1.6",
-    "stringcase>=1.2.0",
 ]
 
 [project.urls]

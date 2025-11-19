@@ -1,6 +1,5 @@
 import os
 import jinja2
-import stringcase
 import re
 from typing import List, Dict, Callable
 from . import stringmanip
@@ -42,9 +41,9 @@ class Templator(object):
         loader = jinja2.FileSystemLoader(searchpath=template_dir)
         return self.add_jinja2_loader(loader)
     
-    def add_template_package(self, package_name: str):
+    def add_template_package(self, package_name: str, template_subdir: str=''):
         self.logger.debug("Using templates from package %s", package_name)
-        loader = jinja2.PackageLoader(package_name, '')
+        loader = jinja2.PackageLoader(package_name, template_subdir)
         return self.add_jinja2_loader(loader)
 
     def add_jinja2_loader(self, loader):
@@ -85,13 +84,15 @@ class Templator(object):
             env = jinja2.Environment(loader=loader, extensions=['jinja2.ext.do'])
             env.filters['UpperCamelCase'] = stringmanip.upper_camel_case
             env.filters['PascalCase'] = stringmanip.upper_camel_case
-            env.filters['CONST_CASE'] = lambda s : stringcase.constcase(str(s)).replace('__', '_')
-            env.filters['snake_case'] = stringcase.snakecase
+            env.filters['CONST_CASE'] = stringmanip.const_case
+            env.filters['snake_case'] = stringmanip.snake_case
             env.filters['camelCase'] = stringmanip.lower_camel_case
             env.filters['lowerCamelCase'] = stringmanip.lower_camel_case
             env.filters['type'] = type # For debug
             env.filters['underscore'] = self._add_leading_underscore
             env.filters['quotestring'] = self._quote_if_string
+            env.filters['comment'] = stringmanip.commentblock
+            env.filters['commentify'] = stringmanip.commentblock
             env.filters['dir'] = dir # For debug
             env.filters['strip'] = self._strip
             for filter_name, filter_def in self.filters.items():
@@ -173,16 +174,17 @@ class CodeTemplator(MarkdownTemplator):
         self.add_filter('enumify', self._enumify)
         self.add_filter('privatize', self._privatize)
         self.add_filter('doxygenify', self._doxygenify)
+        self.add_filter('commentblock', stringmanip.commentblock)
 
     @staticmethod
     def _enumify(s: str):
         if s[0].isnumeric():
             s = '_'+s
-        return stringcase.constcase(s)
+        return stringmanip.const_case(s)
     
     @classmethod
     def _privatize(cls, s: str):
-        return cls._add_leading_underscore(stringcase.camelcase(s))
+        return cls._add_leading_underscore(stringmanip.lower_camel_case(s))
 
     @staticmethod
     def _doxygenify(s: str):
