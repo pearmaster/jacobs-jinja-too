@@ -88,6 +88,9 @@ class Templator(object):
             env.filters['snake_case'] = stringmanip.snake_case
             env.filters['camelCase'] = stringmanip.lower_camel_case
             env.filters['lowerCamelCase'] = stringmanip.lower_camel_case
+            env.filters['loweronly'] = stringmanip.lower_only
+            env.filters['hyphen_case'] = stringmanip.hyphen_case
+            env.filters['path_case'] = stringmanip.path_case
             env.filters['type'] = type # For debug
             env.filters['underscore'] = self._add_leading_underscore
             env.filters['quotestring'] = self._quote_if_string
@@ -122,6 +125,10 @@ class Templator(object):
         self.generated_files.append(output_filepath)
         return output_filepath
 
+    def render_string(self, string_template: str, **kwargs) -> str:
+        template = self._get_jinja2_environment().from_string(string_template)
+        rendered = template.render(kwargs)
+        return rendered
 
 class WebTemplator(Templator):
     """A Templator with filters useful for generating web content.

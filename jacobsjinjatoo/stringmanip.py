@@ -39,12 +39,34 @@ def upper_camel_case(s: str) -> str:
     return ''.join(capitalized_tokens)
 
 def lower_camel_case(s: str) -> str:
+    """ Convert a string to lowerCamelCase, which is camel case starting with a lowercase letter."""
     tokens = tokenize(s)
     if not tokens:
         return ''
     first_token = tokens[0].lower()
     capitalized_tokens = [token.capitalize() for token in tokens[1:]]
     return first_token + ''.join(capitalized_tokens)
+
+def lower_only(s: str) -> str:
+    """ Converting a string to lowercasewithoutanyseparators.
+    """
+    tokens = tokenize(s)
+    lower_tokens = [token.lower() for token in tokens]
+    return ''.join(lower_tokens)
+
+def hyphen_case(s: str) -> str:
+    """ Converting a string to hyphen-case (lowercase with hyphens).
+    """
+    tokens = tokenize(s)
+    lower_tokens = [token.lower() for token in tokens]
+    return '-'.join(lower_tokens)
+
+def path_case(s: str) -> str:
+    """ Converting a string to path/case (lowercase with slashes).
+    """
+    tokens = tokenize(s)
+    lower_tokens = [token.lower() for token in tokens]
+    return '/'.join(lower_tokens)
 
 def const_case(s: str) -> str:
     """ Converting a string to CONSTANT_CASE (uppercase with underscores).
