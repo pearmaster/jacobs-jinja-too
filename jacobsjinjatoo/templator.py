@@ -1,11 +1,12 @@
 import os
 import jinja2
 import re
-from typing import List, Dict, Callable
+from typing import List, Dict, Callable, Any
 from . import stringmanip
 from .filewriter import WriteIfChangedFile
 from pathlib import Path
 import logging
+from typing import Any
 from jinja_markdown import MarkdownExtension
 
 class OutputNameException(Exception):
@@ -23,7 +24,7 @@ class Templator(object):
         if isinstance(output_dir, str):
             output_dir = Path(output_dir)
         self.output_dir: Path|int = output_dir
-        self.generated_files: List[str] = []
+        self.generated_files: List[Path] = []
         self._jinja2_environment = None
         self.loaders: List[jinja2.loaders.BaseLoader] = []
         self.filters: Dict[str, Callable[[str], str]] = dict()
@@ -74,6 +75,15 @@ class Templator(object):
     def _strip(s: str, chars):
         return s.strip(chars)
 
+    @staticmethod
+    def _exclude(value: List[Any], filter_str: str) -> List[Any]:
+        return [item for item in value if item != filter_str]
+
+    @staticmethod
+    def _exclude_regex(value: List[Any], pattern: str) -> List[Any]:
+        compiled_pattern = re.compile(pattern)
+        return [item for item in value if not compiled_pattern.search(str(item))]
+
     def _get_jinja2_environment(self, force=False):
 
         def _is_of_type(obj, theType):
@@ -95,6 +105,8 @@ class Templator(object):
             env.filters['commentify'] = stringmanip.commentblock
             env.filters['dir'] = dir # For debug
             env.filters['strip'] = self._strip
+            env.filters['exclude'] = self._exclude  
+            env.filters['exclude_regex'] = self._exclude_regex
             for filter_name, filter_def in self.filters.items():
                 env.filters[filter_name] = filter_def
             env.tests['oftype'] = _is_of_type
@@ -112,7 +124,7 @@ class Templator(object):
             output_name = self.output_dir / output_name
         return Path(output_name)
 
-    def render_template(self, template_name: str, output_name: str|Path|None = None, **kwargs) -> str:
+    def render_template(self, template_name: str, output_name: str|Path|None = None, **kwargs) -> Path:
         output_filepath = self._output_filepath(template_name, output_name)
         self.logger.info("Rendering template %s to %s", template_name, output_filepath)
         template = self._get_jinja2_environment().get_template(str(template_name))
@@ -161,7 +173,7 @@ class MarkdownTemplator(Templator):
 
     @staticmethod
     def _blockQuote(s: str, level=1):
-        lines = str.split("\n")
+        lines = s.split("\n")
         return "\n".join([">"+l for l in lines])
 
 
