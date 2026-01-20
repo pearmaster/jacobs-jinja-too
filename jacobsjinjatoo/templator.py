@@ -84,6 +84,11 @@ class Templator(object):
         compiled_pattern = re.compile(pattern)
         return [item for item in value if not compiled_pattern.search(str(item))]
 
+    @staticmethod
+    def _match_regex(value: List[Any], pattern: str) -> List[Any]:
+        compiled_pattern = re.compile(pattern)
+        return [item for item in value if compiled_pattern.search(str(item))]
+
     def _get_jinja2_environment(self, force=False):
 
         def _is_of_type(obj, theType):
@@ -110,6 +115,7 @@ class Templator(object):
             env.filters['strip'] = self._strip
             env.filters['exclude'] = self._exclude  
             env.filters['exclude_regex'] = self._exclude_regex
+            env.filters['match_regex'] = self._match_regex
             for filter_name, filter_def in self.filters.items():
                 env.filters[filter_name] = filter_def
             env.tests['oftype'] = _is_of_type
