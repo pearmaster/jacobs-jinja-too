@@ -89,6 +89,20 @@ class Templator(object):
         compiled_pattern = re.compile(pattern)
         return [item for item in value if compiled_pattern.search(str(item))]
 
+    @staticmethod
+    def _regex_replace(value: str, pattern: str, replacement: str) -> str:
+        """Perform regex search and replace on a string.
+        
+        Args:
+            value: The input string to search in
+            pattern: The regular expression pattern to search for
+            replacement: The replacement string
+            
+        Returns:
+            The string with replacements applied
+        """
+        return re.sub(pattern, replacement, value)
+
     def _get_jinja2_environment(self, force=False):
 
         def _is_of_type(obj, theType):
@@ -116,6 +130,7 @@ class Templator(object):
             env.filters['exclude'] = self._exclude  
             env.filters['exclude_regex'] = self._exclude_regex
             env.filters['match_regex'] = self._match_regex
+            env.filters['regex_replace'] = self._regex_replace
             for filter_name, filter_def in self.filters.items():
                 env.filters[filter_name] = filter_def
             env.tests['oftype'] = _is_of_type
