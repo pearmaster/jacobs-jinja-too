@@ -90,6 +90,11 @@ class Templator(object):
         return [item for item in value if compiled_pattern.search(str(item))]
 
     @staticmethod
+    def _regex_findall(value: str, pattern: str) -> List[str]:
+        compiled_pattern = re.compile(pattern)
+        return compiled_pattern.findall(value)
+
+    @staticmethod
     def _regex_replace(value: str, pattern: str, replacement: str) -> str:
         """Perform regex search and replace on a string.
         
@@ -137,6 +142,7 @@ class Templator(object):
             env.filters['exclude_regex'] = self._exclude_regex
             env.filters['match_regex'] = self._match_regex
             env.filters['regex_replace'] = self._regex_replace
+            env.filters['regex_findall'] = self._regex_findall
             for filter_name, filter_def in self.filters.items():
                 env.filters[filter_name] = filter_def
             env.tests['oftype'] = _is_of_type

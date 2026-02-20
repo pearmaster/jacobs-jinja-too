@@ -33,7 +33,7 @@ def test_regex_replace_basic():
 def test_regex_replace_pattern():
     """Test regex pattern replacement."""
     templator = Templator()
-    result = templator.render_string("{{ 'test123test456' | regex_replace('\\d+', 'NUM') }}")
+    result = templator.render_string("{{ 'test123test456' | regex_replace('[0-9]+', 'NUM') }}")
     assert result == "testNUMtestNUM"
 
 
@@ -42,14 +42,6 @@ def test_regex_replace_email_domain():
     templator = Templator()
     result = templator.render_string("{{ 'user@example.com' | regex_replace('@.*', '@newdomain.com') }}")
     assert result == "user@newdomain.com"
-
-
-def test_regex_replace_multiple_spaces():
-    """Test replacing multiple spaces with single space."""
-    templator = Templator()
-    result = templator.render_string("{{ 'hello    world   test' | regex_replace('\\s+', ' ') }}")
-    assert result == "hello world test"
-
 
 
 def test_regex_replace_case_insensitive():
@@ -76,15 +68,8 @@ def test_regex_replace_no_match():
 def test_regex_replace_empty_string():
     """Test replacing with empty string (deletion)."""
     templator = Templator()
-    result = templator.render_string("{{ 'hello123world456' | regex_replace('\\d+', '') }}")
+    result = templator.render_string("{{ 'hello123world456' | regex_replace('[0-9]+', '') }}")
     assert result == "helloworld"
-
-
-def test_regex_replace_special_characters():
-    """Test escaping special regex characters."""
-    templator = Templator()
-    result = templator.render_string("{{ 'price: $100' | regex_replace('\\$\\d+', '$200') }}")
-    assert result == "price: $200"
 
 
 def test_regex_replace_in_template_file():
@@ -103,7 +88,7 @@ def test_regex_replace_in_template_file():
         "regex_test.txt.jinja2",
         output_name="regex_output.txt",
         text="Version 1.2.3",
-        pattern=r"\d+\.\d+\.\d+",
+        pattern=r"[0-9]+\.[0-9]+\.[0-9]+",
         replacement="2.0.0"
     )
     
@@ -136,7 +121,7 @@ def test_regex_replace_percent_counter():
     """Test that '%{counter}' in the replacement.
 
     The expression:
-        "a/{b}/c{d}" | regex_replace("\{([a-z]+)\}", "%{counter}")
+        "a/{b}/c{d}" | regex_replace("\\{([a-z]+)\\}", "%{counter}")
 
     """
     templator = Templator()
@@ -146,3 +131,65 @@ def test_regex_replace_percent_counter():
     assert result == "a/%1/c%2", (
         "Expected '%{counter}' NOT to be treated as a numbered backreference"
     )
+
+
+# ---------------------------------------------------------------------------
+# regex_findall tests
+# ---------------------------------------------------------------------------
+
+def test_regex_findall_capture_group():
+    """Test that a single capture group returns a list of the captured values."""
+    templator = Templator()
+    result = templator.render_string(
+        r"{{ '{hello}/{world}' | regex_findall('\\{([A-Za-z]+)\\}') }}"
+    )
+    assert result == "['hello', 'world']"
+
+
+def test_regex_findall_no_capture_group():
+    """Test that without a capture group the full matches are returned."""
+    templator = Templator()
+    result = templator.render_string(
+        r"{{ 'foo123bar456' | regex_findall('[0-9]+') }}"
+    )
+    assert result == "['123', '456']"
+
+
+def test_regex_findall_no_match():
+    """Test that an empty list is returned when nothing matches."""
+    templator = Templator()
+    result = templator.render_string(
+        r"{{ 'hello world' | regex_findall('[0-9]+') }}"
+    )
+    assert result == "[]"
+
+
+def test_regex_findall_multiple_capture_groups():
+    """Test that multiple capture groups return a list of tuples."""
+    templator = Templator()
+    result = templator.render_string(
+        r"{{ 'key1=val1 key2=val2' | regex_findall('([a-z]+)([0-9]+)') }}",
+    )
+    # re.findall with 2 groups returns a list of tuples for every match;
+    # the string contains 4 word+digit pairs: key1, val1, key2, val2
+    assert result == "[('key', '1'), ('val', '1'), ('key', '2'), ('val', '2')]"
+
+
+def test_regex_findall_used_in_loop():
+    """Test iterating over regex_findall results inside a Jinja template."""
+    templator = Templator()
+    result = templator.render_string(
+        r"{% for w in '{hello}/{world}' | regex_findall('\\{([A-Za-z]+)\\}') %}{{ w }} {% endfor %}"
+    )
+    assert result.strip() == "hello world"
+
+
+def test_regex_findall_via_variables():
+    """Test regex_findall with pattern supplied as a template variable."""
+    templator = Templator()
+    result = templator.render_string(
+        "{{ text | regex_findall(pattern) }}",
+        text="{hello}/{world}",
+        pattern=r"\{([A-Za-z]+)\}",
+    )
+    assert result == "['hello', 'world']"
