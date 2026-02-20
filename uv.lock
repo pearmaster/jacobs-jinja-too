@@ -46,7 +46,7 @@ wheels = [
 
 [[package]]
 name = "jacobs-jinja-too"
-version = "0.2.4"
+version = "0.2.13"
 source = { editable = "." }
 dependencies = [
     { name = "jinja-markdown" },

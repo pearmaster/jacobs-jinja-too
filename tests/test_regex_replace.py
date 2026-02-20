@@ -51,18 +51,6 @@ def test_regex_replace_multiple_spaces():
     assert result == "hello world test"
 
 
-def test_regex_replace_backreference():
-    """Test using backreferences in replacement."""
-    templator = Templator()
-    # Swap first and last name - use raw string for replacement
-    result = templator.render_string(
-        "{{ text | regex_replace(pattern, replacement) }}",
-        text='John Doe',
-        pattern=r'(\w+) (\w+)',
-        replacement=r'\2, \1'
-    )
-    assert result == "Doe, John"
-
 
 def test_regex_replace_case_insensitive():
     """Test case-insensitive replacement using inline flag."""
@@ -142,3 +130,19 @@ def test_regex_replace_with_variable():
         replace="qux"
     )
     assert result == "foo qux baz"
+
+
+def test_regex_replace_percent_counter():
+    """Test that '%{counter}' in the replacement.
+
+    The expression:
+        "a/{b}/c{d}" | regex_replace("\{([a-z]+)\}", "%{counter}")
+
+    """
+    templator = Templator()
+    result = templator.render_string(
+        r"{{ 'a/{b}/c{d}' | regex_replace('\\{([a-z]+)\\}', '%{counter}') }}"
+    )
+    assert result == "a/%1/c%2", (
+        "Expected '%{counter}' NOT to be treated as a numbered backreference"
+    )

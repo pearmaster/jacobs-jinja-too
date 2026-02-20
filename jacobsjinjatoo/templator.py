@@ -101,7 +101,13 @@ class Templator(object):
         Returns:
             The string with replacements applied
         """
-        return re.sub(pattern, replacement, value)
+        counter = 0
+        def improved_replacement(match):
+            nonlocal counter
+            counter += 1
+            return replacement.format(counter=counter)
+
+        return re.sub(pattern, improved_replacement, value)
 
     def _get_jinja2_environment(self, force=False):
 
